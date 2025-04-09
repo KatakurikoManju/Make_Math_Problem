@@ -46,6 +46,11 @@
       margin-top: 1rem;
       font-weight: bold;
     }
+    .loading {
+      color: #e67e22;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
   </style>
 </head>
 <body>
@@ -55,7 +60,7 @@
   <label>OpenAI APIキー（個別に入力してほしいのだ）</label>
   <input type="password" id="apiKey" placeholder="sk-..." />
 
-  <!-- モデル選択 -->
+  <!-- モデル選択（o3-miniは削除） -->
   <label>利用するAIモデルを選んでほしいのだ</label>
   <select id="modelChoice">
     <option value="gpt-4o">gpt-4o</option>
@@ -120,13 +125,17 @@
       const apiKey = document.getElementById('apiKey').value.trim();
       if (!apiKey) return alert('APIキーを入力してほしいのだ！');
 
+      // 状況表示：生成中
+      document.getElementById('questionText').textContent = "";
+      document.getElementById('questionBox').style.display = 'block';
+      document.getElementById('result').innerHTML = '<span class="loading">問題生成中…</span>';
+
       const selectedModel = document.getElementById('modelChoice').value;
       const grade = document.getElementById('grade').value;
       const difficulty = document.getElementById('difficulty').value;
       const topic = document.getElementById('topic').value.trim();
       const type = document.getElementById('type').value;
 
-      // プロンプトに「難易度」を追加して、より具体的な問題を求めるのだ
       const prompt = `あなたは日本の学校教育に詳しい数学教師なのだ。
 次の条件に従って、1問だけ数学の問題を出題するのだ。
 - 学年: ${grade}
@@ -163,11 +172,12 @@
         const [q, a] = output.split(/答え[:：]/);
         document.getElementById('questionText').textContent = q.trim();
         correctAnswer = a.trim().replace(/[。\\n]/g, '').trim();
-        document.getElementById('questionBox').style.display = 'block';
-        document.getElementById('result').textContent = '';
+        document.getElementById('result').textContent = "";
         document.getElementById('userAnswer').value = '';
       } catch (err) {
         console.error(err);
+        document.getElementById('questionText').textContent = "";
+        document.getElementById('result').textContent = "";
         alert('問題の生成に失敗したのだ… ' + err.message);
       }
     }
@@ -180,6 +190,9 @@
       const selectedModel = document.getElementById('modelChoice').value;
       const userAnswer = document.getElementById('userAnswer').value.trim().replace(/[。\\n]/g, '');
       if (!userAnswer) return alert("答えを入力してほしいのだ！");
+
+      // 状況表示：採点中
+      document.getElementById('result').innerHTML = '<span class="loading">採点中…</span>';
 
       const prompt = `あなたは数学の問題を採点する名人なのだ。
 以下の情報をもとに、ユーザーの解答が正しいかを判定し、結果と簡単な解説を記載するのだ。
@@ -217,6 +230,7 @@
         document.getElementById('result').textContent = evaluation.trim();
       } catch (err) {
         console.error(err);
+        document.getElementById('result').textContent = "";
         alert('採点に失敗したのだ… ' + err.message);
       }
     }

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI数学問題生成と採点</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1>AI数学問題生成と採点（ずんだ式なのだ）</h1>
+
+    <label>OpenAI APIキー（個別に入力してほしいのだ）<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">取得はこちら</a></label>
+    <input type="password" id="apiKey" placeholder="sk-..." />
+
+    <label>学年を選んでほしいのだ</label>
+    <select id="grade">
+      <option value="小1">小1</option>
+      <option value="小2">小2</option>
+      <option value="小3">小3</option>
+      <option value="小4">小4</option>
+      <option value="小5">小5</option>
+      <option value="小6">小6</option>
+      <option value="中1">中1</option>
+      <option value="中2">中2</option>
+      <option value="中3">中3</option>
+      <option value="高1">高1</option>
+      <option value="高2">高2</option>
+      <option value="高3">高3</option>
+    </select>
+
+    <label>分野を入力してほしいのだ（例：分数、関数、図形など）</label>
+    <input type="text" id="topic" placeholder="例：図形" />
+
+    <label>問題タイプを選んでほしいのだ</label>
+    <select id="type">
+      <option value="計算問題">計算問題</option>
+      <option value="文章題">文章題</option>
+    </select>
+
+    <button onclick="generateQuestion()">問題を生成するのだ！</button>
+
+    <div id="questionBox" style="display: none;">
+      <p id="questionText"></p>
+
+      <label>答えを入力してほしいのだ：</label>
+      <input type="text" id="userAnswer" placeholder="ここに答えを書くのだ" />
+      <button onclick="checkAnswer()">答えるのだ！</button>
+
+      <p id="result"></p>
+    </div>
+
+    <script src="MakeProblem.js"></script>
+  </body>
+</html>

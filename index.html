@@ -1,53 +1,226 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <title>AI数学問題生成と採点</title>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <h1>AI数学問題生成と採点（ずんだ式なのだ）</h1>
+<head>
+  <meta charset="UTF-8" />
+  <title>AI数学問題生成と採点</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 700px;
+      margin: auto;
+      background: #f0f8ff;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    select, input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 0.3rem;
+      width: 100%;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #questionBox {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI数学問題生成と採点（ずんだ式なのだ）</h1>
 
-    <label>OpenAI APIキー（個別に入力してほしいのだ）<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">取得はこちら</a></label>
-    <input type="password" id="apiKey" placeholder="sk-..." />
+  <!-- APIキー入力 -->
+  <label>OpenAI APIキー（個別に入力してほしいのだ）</label>
+  <input type="password" id="apiKey" placeholder="sk-..." />
 
-    <label>学年を選んでほしいのだ</label>
-    <select id="grade">
-      <option value="小1">小1</option>
-      <option value="小2">小2</option>
-      <option value="小3">小3</option>
-      <option value="小4">小4</option>
-      <option value="小5">小5</option>
-      <option value="小6">小6</option>
-      <option value="中1">中1</option>
-      <option value="中2">中2</option>
-      <option value="中3">中3</option>
-      <option value="高1">高1</option>
-      <option value="高2">高2</option>
-      <option value="高3">高3</option>
-    </select>
+  <!-- モデル選択 -->
+  <label>利用するAIモデルを選んでほしいのだ</label>
+  <select id="modelChoice">
+    <option value="gpt-4o">gpt-4o</option>
+    <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
+    <option value="o3-mini">o3-mini</option>
+  </select>
 
-    <label>分野を入力してほしいのだ（例：分数、関数、図形など）</label>
-    <input type="text" id="topic" placeholder="例：図形" />
+  <!-- 学年選択 -->
+  <label>学年を選んでほしいのだ</label>
+  <select id="grade">
+    <option value="小1">小1</option>
+    <option value="小2">小2</option>
+    <option value="小3">小3</option>
+    <option value="小4">小4</option>
+    <option value="小5">小5</option>
+    <option value="小6">小6</option>
+    <option value="中1">中1</option>
+    <option value="中2">中2</option>
+    <option value="中3">中3</option>
+    <option value="高1">高1</option>
+    <option value="高2">高2</option>
+    <option value="高3">高3</option>
+  </select>
 
-    <label>問題タイプを選んでほしいのだ</label>
-    <select id="type">
-      <option value="計算問題">計算問題</option>
-      <option value="文章題">文章題</option>
-    </select>
+  <!-- 学年内の難易度 -->
+  <label>学年内の難易度を選んでほしいのだ</label>
+  <select id="difficulty">
+    <option value="簡単">簡単</option>
+    <option value="普通" selected>普通</option>
+    <option value="難しい">難しい</option>
+  </select>
 
-    <button onclick="generateQuestion()">問題を生成するのだ！</button>
+  <!-- 分野入力 -->
+  <label>分野を入力してほしいのだ（例：分数、関数、図形など）</label>
+  <input type="text" id="topic" placeholder="例：図形" />
 
-    <div id="questionBox" style="display: none;">
-      <p id="questionText"></p>
+  <!-- 問題タイプ選択 -->
+  <label>問題タイプを選んでほしいのだ</label>
+  <select id="type">
+    <option value="計算問題">計算問題</option>
+    <option value="文章題">文章題</option>
+  </select>
 
-      <label>答えを入力してほしいのだ：</label>
-      <input type="text" id="userAnswer" placeholder="ここに答えを書くのだ" />
-      <button onclick="checkAnswer()">答えるのだ！</button>
+  <!-- 問題生成ボタン -->
+  <button onclick="generateQuestion()">問題を生成するのだ！</button>
 
-      <p id="result"></p>
-    </div>
+  <!-- 問題＆採点エリア -->
+  <div id="questionBox" style="display: none;">
+    <p id="questionText"></p>
 
-    <script src="MakeProblem.js"></script>
-  </body>
+    <label>答えを入力してほしいのだ：</label>
+    <input type="text" id="userAnswer" placeholder="ここに答えを書くのだ" />
+    <button onclick="checkAnswer()">答えるのだ！</button>
+
+    <p id="result"></p>
+  </div>
+
+  <script>
+    let correctAnswer = "";
+
+    // 問題生成関数
+    async function generateQuestion() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) return alert('APIキーを入力してほしいのだ！');
+
+      const selectedModel = document.getElementById('modelChoice').value;
+      const grade = document.getElementById('grade').value;
+      const difficulty = document.getElementById('difficulty').value;
+      const topic = document.getElementById('topic').value.trim();
+      const type = document.getElementById('type').value;
+
+      // プロンプトに「難易度」を追加して、より具体的な問題を求めるのだ
+      const prompt = `あなたは日本の学校教育に詳しい数学教師なのだ。
+次の条件に従って、1問だけ数学の問題を出題するのだ。
+- 学年: ${grade}
+- 学年内の難易度: ${difficulty}
+- 分野: ${topic}
+- 問題タイプ: ${type}
+- 回答も含めるのだ。回答は「答え：」という表記で明記するのだ。
+- 出題文、答えともに日本語で作成するのだ。`;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+        
+        const data = await res.json();
+        console.log('APIレスポンス:', data);
+
+        if (data.error) {
+          throw new Error(data.error.message || "不明なエラーが発生したのだ");
+        }
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error("APIから有効な選択肢が返されなかったのだ");
+        }
+
+        const output = data.choices[0].message.content;
+        const [q, a] = output.split(/答え[:：]/);
+        document.getElementById('questionText').textContent = q.trim();
+        correctAnswer = a.trim().replace(/[。\\n]/g, '').trim();
+        document.getElementById('questionBox').style.display = 'block';
+        document.getElementById('result').textContent = '';
+        document.getElementById('userAnswer').value = '';
+      } catch (err) {
+        console.error(err);
+        alert('問題の生成に失敗したのだ… ' + err.message);
+      }
+    }
+
+    // AIによる採点関数
+    async function checkAnswer() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) return alert('APIキーを入力してほしいのだ！');
+
+      const selectedModel = document.getElementById('modelChoice').value;
+      const userAnswer = document.getElementById('userAnswer').value.trim().replace(/[。\\n]/g, '');
+      if (!userAnswer) return alert("答えを入力してほしいのだ！");
+
+      const prompt = `あなたは数学の問題を採点する名人なのだ。
+以下の情報をもとに、ユーザーの解答が正しいかを判定し、結果と簡単な解説を記載するのだ。
+---
+問題文: ${document.getElementById('questionText').textContent}
+正しい解答: ${correctAnswer}
+ユーザーの解答: ${userAnswer}
+---
+ユーザーの解答が正しいなら「正解」、間違っているなら「不正解」と記し、必要に応じて解説するのだ。`;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+
+        const data = await res.json();
+        console.log('採点APIレスポンス:', data);
+
+        if (data.error) {
+          throw new Error(data.error.message || "不明なエラーが発生したのだ");
+        }
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error("採点APIから有効な選択肢が返されなかったのだ");
+        }
+        
+        const evaluation = data.choices[0].message.content;
+        document.getElementById('result').textContent = evaluation.trim();
+      } catch (err) {
+        console.error(err);
+        alert('採点に失敗したのだ… ' + err.message);
+      }
+    }
+  </script>
+</body>
 </html>

@@ -11,6 +11,7 @@ h1 {
 label {
   display: block;
   margin-top: 1rem;
+  font-weight: bold;
 }
 select, input, button {
   padding: 0.5rem;
@@ -35,7 +36,17 @@ button:hover {
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
+/* 改行・折り返しのための設定 */
+#questionText, #result {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 #result {
   margin-top: 1rem;
   font-weight: bold;
+}
+.loading {
+  color: #e67e22;
+  font-weight: bold;
+  font-size: 1.1rem;
 }

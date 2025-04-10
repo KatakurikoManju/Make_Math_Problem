@@ -3,17 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <title>AI数学問題生成と採点</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- MathJax コンフィグ：ディスプレイ数式は $$ ... $$ を使用 -->
-  <script src="MathJaxSetting.js"></script>
-  <!-- MathJax の読み込み -->
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 700px;
+      margin: auto;
+      background: #f0f8ff;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    select, input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 0.3rem;
+      width: 100%;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #questionBox {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    .loading {
+      color: #e67e22;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+  </style>
+
+  <!-- MathJax設定と読み込み -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
   <h1>AI数学問題生成と採点（ずんだ式なのだ）</h1>
 
   <!-- APIキー入力 -->
-  <label>OpenAI APIキー（個別に入力してほしいのだ）<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">取得はこちら</a></label>
+  <label>OpenAI APIキー（個別に入力してほしいのだ）</label>
   <input type="password" id="apiKey" placeholder="sk-..." />
 
   <!-- モデル選択 -->
@@ -64,16 +120,127 @@
 
   <!-- 問題＆採点エリア -->
   <div id="questionBox" style="display: none;">
-    <!-- 問題文出力エリア（ここで aligned 環境を使って複数行表示） -->
     <p id="questionText"></p>
 
     <label>答えを入力してほしいのだ：</label>
     <input type="text" id="userAnswer" placeholder="ここに答えを書くのだ" />
     <button onclick="checkAnswer()">答えるのだ！</button>
 
-    <!-- 採点結果出力エリア -->
     <p id="result"></p>
   </div>
-  <script src="MakeProblem.js"></script>
+
+  <script>
+    async function generateQuestion() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) return alert('APIキーを入力してほしいのだ！');
+
+      // 状況表示：生成中
+      document.getElementById('questionText').textContent = "";
+      document.getElementById('questionBox').style.display = 'block';
+      document.getElementById('result').innerHTML = '<span class="loading">問題生成中…</span>';
+
+      const selectedModel = document.getElementById('modelChoice').value;
+      const grade = document.getElementById('grade').value;
+      const difficulty = document.getElementById('difficulty').value;
+      const topic = document.getElementById('topic').value.trim();
+      const type = document.getElementById('type').value;
+
+      // プロンプト：答えや解説は含めず、問題文のみ生成（数式は $$...$$ で記述するよう指示）
+      const prompt = `あなたは日本の学校教育に詳しい数学教師なのだ。
+      次の条件に従い、1問だけ数学の問題文を出題するのだ。ただし、正解や解説は含めず、問題文のみ作成するのだ。
+      - 学年: ${grade}
+      - 学年内の難易度: ${difficulty}
+      - 分野: ${topic}
+      - 問題タイプ: ${type}
+      - 問題文は日本語で作成し、数式がある場合は $$...$$ でディスプレイ数式として記述するのだ。`;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+        
+        const data = await res.json();
+
+        if (data.error || !data.choices || data.choices.length === 0) {
+          throw new Error(data.error?.message || "APIから有効なデータが返されなかったのだ");
+        }
+
+        const questionText = data.choices[0].message.content.trim();
+        document.getElementById('questionText').innerHTML = questionText;
+        document.getElementById('result').textContent = "";
+        document.getElementById('userAnswer').value = '';
+        // MathJaxで再レンダリング：questionText内の$$...$$が正しく表示されるように
+        MathJax.typesetPromise([document.getElementById('questionText')]);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('questionText').textContent = "";
+        document.getElementById('result').textContent = "";
+        alert('問題の生成に失敗したのだ… ' + err.message);
+      }
+    }
+
+    async function checkAnswer() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) return alert('APIキーを入力してほしいのだ！');
+
+      const selectedModel = document.getElementById('modelChoice').value;
+      // ユーザーの回答から改行や不要な全角句点を除去
+      const userAnswer = document.getElementById('userAnswer').value.trim().replace(/[。\\n]/g, '');
+      if (!userAnswer) return alert("答えを入力してほしいのだ！");
+
+      document.getElementById('result').innerHTML = '<span class="loading">採点中…</span>';
+
+      // 採点用プロンプト：最初に「正解」または「不正解」を出し、その後理由や数式で解説する形式
+      const prompt = `あなたは数学の問題を採点する名人なのだ。
+      以下の問題文に対し、ユーザーが解答した内容から正しいか不正解かを判定し、出力フォーマットに従って結果を返すのだ。
+
+      出力フォーマット例：
+      ---
+      正解
+      理由： $$ 数式などで、解説を書く $$ 
+      ---
+
+      問題文: ${document.getElementById('questionText').textContent}
+      ユーザーの解答: ${userAnswer}
+      `;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.error || !data.choices || data.choices.length === 0) {
+          throw new Error(data.error?.message || "採点APIが応答しなかったのだ");
+        }
+
+        const evaluation = data.choices[0].message.content.trim();
+        document.getElementById('result').innerHTML = evaluation;
+        // MathJaxでresult内の$$...$$部分を再レンダリングする
+        MathJax.typesetPromise([document.getElementById('result')]);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('result').textContent = "";
+        alert('採点に失敗したのだ… ' + err.message);
+      }
+    }
+  </script>
 </body>
 </html>

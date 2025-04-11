@@ -66,21 +66,21 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
-  <h1>AI数学問題生成と採点（ずんだ式なのだ）</h1>
+  <h1>AI数学問題生成と採点</h1>
 
   <!-- APIキー入力 -->
-  <label>OpenAI APIキー（個別に入力してほしいのだ）</label>
+  <label>OpenAI APIキー（個別に入力）</label>
   <input type="password" id="apiKey" placeholder="sk-..." />
 
   <!-- モデル選択 -->
-  <label>利用するAIモデルを選んでほしいのだ</label>
+  <label>利用するAIモデルを選択</label>
   <select id="modelChoice">
     <option value="gpt-4o">gpt-4o</option>
     <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
   </select>
 
   <!-- 学年選択 -->
-  <label>学年を選んでほしいのだ</label>
+  <label>学年を選択</label>
   <select id="grade">
     <option value="小1">小1</option>
     <option value="小2">小2</option>
@@ -97,7 +97,7 @@
   </select>
 
   <!-- 学年内の難易度 -->
-  <label>学年内の難易度を選んでほしいのだ</label>
+  <label>学年内の難易度を選択</label>
   <select id="difficulty">
     <option value="簡単">簡単</option>
     <option value="普通" selected>普通</option>
@@ -105,26 +105,27 @@
   </select>
 
   <!-- 分野入力 -->
-  <label>分野を入力してほしいのだ（例：分数、関数、図形など）</label>
+  <label>分野を入力（例：分数、関数、図形など）</label>
   <input type="text" id="topic" placeholder="例：図形" />
 
   <!-- 問題タイプ選択 -->
-  <label>問題タイプを選んでほしいのだ</label>
+  <label>問題タイプを選択
+  </label>
   <select id="type">
     <option value="計算問題">計算問題</option>
     <option value="文章題">文章題</option>
   </select>
 
   <!-- 問題生成ボタン -->
-  <button onclick="generateQuestion()">問題を生成するのだ！</button>
+  <button onclick="generateQuestion()">問題を生成！</button>
 
   <!-- 問題＆採点エリア -->
   <div id="questionBox" style="display: none;">
     <p id="questionText"></p>
 
-    <label>答えを入力してほしいのだ：</label>
-    <input type="text" id="userAnswer" placeholder="ここに答えを書くのだ" />
-    <button onclick="checkAnswer()">答えるのだ！</button>
+    <label>答えを入力：</label>
+    <input type="text" id="userAnswer" placeholder="ここに答えを書く" />
+    <button onclick="checkAnswer()">答える！</button>
 
     <p id="result"></p>
   </div>
@@ -132,7 +133,7 @@
   <script>
     async function generateQuestion() {
       const apiKey = document.getElementById('apiKey').value.trim();
-      if (!apiKey) return alert('APIキーを入力してほしいのだ！');
+      if (!apiKey) return alert('APIキーを入力してください！');
 
       // 状況表示：生成中
       document.getElementById('questionText').textContent = "";
@@ -170,7 +171,7 @@
         const data = await res.json();
 
         if (data.error || !data.choices || data.choices.length === 0) {
-          throw new Error(data.error?.message || "APIから有効なデータが返されなかったのだ");
+          throw new Error(data.error?.message || "APIから有効なデータが返されなかった");
         }
 
         const questionText = data.choices[0].message.content.trim();
@@ -189,12 +190,12 @@
 
     async function checkAnswer() {
       const apiKey = document.getElementById('apiKey').value.trim();
-      if (!apiKey) return alert('APIキーを入力してほしいのだ！');
+      if (!apiKey) return alert('APIキーが入力されていません！');
 
       const selectedModel = document.getElementById('modelChoice').value;
       // ユーザーの回答から改行や不要な全角句点を除去
       const userAnswer = document.getElementById('userAnswer').value.trim().replace(/[。\\n]/g, '');
-      if (!userAnswer) return alert("答えを入力してほしいのだ！");
+      if (!userAnswer) return alert("答えが入力されていません！");
 
       document.getElementById('result').innerHTML = '<span class="loading">採点中…</span>';
 
@@ -228,7 +229,7 @@
         const data = await res.json();
 
         if (data.error || !data.choices || data.choices.length === 0) {
-          throw new Error(data.error?.message || "採点APIが応答しなかったのだ");
+          throw new Error(data.error?.message || "採点APIが応答しませんでした");
         }
 
         const evaluation = data.choices[0].message.content.trim();

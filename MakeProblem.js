@@ -18,13 +18,15 @@ async function generateQuestion() {
   const topic = document.getElementById('topic').value.trim();
   const type = document.getElementById('type').value;
 
-  const prompt = `あなたは日本の学校教育に詳しい数学教師なのだ。
-次の条件に従い、1問だけ数学の問題を出題するのだ。ただし、答えや解説は含めず、問題文のみを作成するのだ。
-- 学年: ${grade}
-- 学年内の難易度: ${difficulty}
-- 分野: ${topic}
-- 問題タイプ: ${type}
-- 問題文は日本語で作成し、数式がある場合は $$...$$ でディスプレイ数式として記述するのだ。`;
+  const prompt = `
+    あなたは日本の学校教育に詳しい数学教師なのだ。
+    次の条件に従い、1問だけ数学の問題を出題するのだ。ただし、答えや解説は含めず、問題文のみを作成するのだ。
+    - 学年: ${grade}
+    - 学年内の難易度: ${difficulty}
+    - 分野: ${topic}
+    - 問題タイプ: ${type}
+    - 問題文は日本語で作成し、数式がある場合は $$...$$ でディスプレイ数式として記述するのだ。
+  `;
 
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -80,29 +82,31 @@ async function checkAnswer() {
 
   document.getElementById('result').innerHTML = "";
 
-  const prompt = `あなたは数学の問題を採点する名人なのだ。
-以下の問題に対して、ユーザーの解答が正しいかどうかを判定するのだ。
-もし解説がなくても、答えそのものが正しければ「正解」と判断するのだ。
+  const prompt = `
+    あなたは数学の問題を採点する名人なのだ。
+    以下の問題に対して、ユーザーの解答が正しいかどうかを判定するのだ。
+    もし解説がなくても、答えそのものが正しければ「正解」と判断するのだ。
 
-出力フォーマットの例：
-正解
-理由：
-$$
-＜説明・計算過程（あってもよい）＞
-$$
+    出力フォーマットの例：
+    正解
+    理由：
+    $$
+    ＜説明・計算過程（あってもよい）＞
+    $$
 
-または
+    または
 
-不正解
-理由：
-$$
-＜説明・計算過程＞
-$$
+    不正解
+    理由：
+    $$
+    ＜説明・計算過程＞
+    $$
 
----
-問題文: ${document.getElementById('questionText').textContent}
-ユーザーの解答: ${userAnswer}
----`;
+    ---
+    問題文: ${document.getElementById('questionText').textContent}
+    ユーザーの解答: ${userAnswer}
+    ---
+  `;
   
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -1,76 +1,297 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <title>AI数学問題生成と採点</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- MathJaxの設定と読み込み -->
-    <script src="MathJax.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-  </head>
-  <body>
-    <h1>AI数学問題生成と採点</h1>
+<head>
+  <meta charset="UTF-8" />
+  <title>AI数学問題生成と採点</title>
+  <!-- モダンで白基調・四方に均一な影とホバー時に控えめに上昇するアニメーションを適用 -->
+  <style>
+    /* ベース設定 */
+    body {
+      background-color: #fff;
+      color: #333;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1 {
+      color: #222;
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    label {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: #444;
+      display: block;
+    }
+    /* 入力系・選択系・ボタンに均一な影とホバー効果を設定 */
+    input, select, button {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #fff;
+      /* 均一な影 */
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-sizing: border-box;
+    }
+    /* フォーカス時はアウトラインを隠し、ホバー同様の効果を */
+    input:focus, select:focus {
+      outline: none;
+      transform: translateY(-2px);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+    }
+    /* マウスをかざしたときに上に上がり、影が濃くなる */
+    input:hover, select:hover, button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    /* カード（問題エリア）にも均一な影とホバー効果を適用 */
+    #questionBox {
+      background-color: #f9f9f9;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-top: 2rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    #questionBox:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 14px rgba(0, 0, 0, 0.15);
+    }
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
 
-    <!-- APIキー入力 -->
-    <label>OpenAI APIキー（個別に入力してほしいのだ）</label>
-    <input type="password" id="apiKey" placeholder="sk-..." />
+  <!-- MathJax設定と読み込み -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+  <h1>AI数学問題生成と採点</h1>
 
-    <!-- モデル選択 -->
-    <label>利用するAIモデルを選んでほしいのだ</label>
-    <select id="modelChoice">
-      <option value="gpt-4o">gpt-4o</option>
-      <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
-    </select>
+  <!-- APIキー入力 -->
+  <label>OpenAI APIキー（個別に入力してください）</label>
+  <input type="password" id="apiKey" placeholder="sk-..." />
 
-    <!-- 学年選択 -->
-    <label>学年を選んでほしいのだ</label>
-    <select id="grade">
-      <option value="小1">小1</option>
-      <option value="小2">小2</option>
-      <option value="小3">小3</option>
-      <option value="小4">小4</option>
-      <option value="小5">小5</option>
-      <option value="小6">小6</option>
-      <option value="中1">中1</option>
-      <option value="中2">中2</option>
-      <option value="中3">中3</option>
-      <option value="高1">高1</option>
-      <option value="高2">高2</option>
-      <option value="高3">高3</option>
-    </select>
+  <!-- モデル選択 -->
+  <label>利用するAIモデルを選択してください</label>
+  <select id="modelChoice">
+    <option value="gpt-4o">gpt-4o</option>
+    <option value="gpt-4o-mini" selected>gpt-4o-mini</option>
+  </select>
 
-    <!-- 学年内の難易度 -->
-    <label>学年内の難易度を選んでほしいのだ</label>
-    <select id="difficulty">
-      <option value="簡単">簡単</option>
-      <option value="普通" selected>普通</option>
-      <option value="難しい">難しい</option>
-    </select>
+  <!-- 学年選択 -->
+  <label>学年を選択してください</label>
+  <select id="grade">
+    <option value="小1">小1</option>
+    <option value="小2">小2</option>
+    <option value="小3">小3</option>
+    <option value="小4">小4</option>
+    <option value="小5">小5</option>
+    <option value="小6">小6</option>
+    <option value="中1">中1</option>
+    <option value="中2">中2</option>
+    <option value="中3">中3</option>
+    <option value="高1">高1</option>
+    <option value="高2">高2</option>
+    <option value="高3">高3</option>
+  </select>
 
-    <!-- 分野入力 -->
-    <label>分野を入力してほしいのだ（例：分数、関数、図形など）</label>
-    <input type="text" id="topic" placeholder="例：図形" />
+  <!-- 学年内の難易度 -->
+  <label>学年内の難易度を選択してください</label>
+  <select id="difficulty">
+    <option value="簡単">簡単</option>
+    <option value="普通" selected>普通</option>
+    <option value="難しい">難しい</option>
+  </select>
 
-    <!-- 問題タイプ選択 -->
-    <label>問題タイプを選んでほしいのだ</label>
-    <select id="type">
-      <option value="計算問題">計算問題</option>
-      <option value="文章題">文章題</option>
-    </select>
+  <!-- 分野入力 -->
+  <label>分野を入力してください（例：分数、関数、図形など）</label>
+  <input type="text" id="topic" placeholder="例：図形" />
 
-    <!-- 問題生成ボタン -->
-    <button id="generateButton" onclick="generateQuestion()">問題を生成するのだ！</button>
+  <!-- 問題タイプ選択 -->
+  <label>問題タイプを選択してください</label>
+  <select id="type">
+    <option value="計算問題">計算問題</option>
+    <option value="文章題">文章題</option>
+  </select>
 
-    <!-- 問題＆採点エリア -->
-    <div id="questionBox" style="display: none;">
-      <p id="questionText"></p>
+  <!-- 問題生成ボタン -->
+  <button id="generateButton" onclick="generateQuestion()">問題を生成する！</button>
 
-      <label>答えを入力してほしいのだ：</label>
-      <input type="text" id="userAnswer" placeholder="ここに答えを書くのだ" />
-      <button id="checkAnswerButton" onclick="checkAnswer()">答えるのだ！</button>
+  <!-- 問題＆採点エリア -->
+  <div id="questionBox" style="display: none;">
+    <p id="questionText"></p>
+    <label>答えを入力してください：</label>
+    <input type="text" id="userAnswer" placeholder="ここに答えを書く" />
+    <button id="checkAnswerButton" onclick="checkAnswer()">答える！</button>
+    <p id="result"></p>
+  </div>
 
-      <p id="result"></p>
-    </div>
-    <script src="MakeProblem.js"></script>
-  </body>
+  <script>
+    async function generateQuestion() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) return alert('APIキーを入力してください！');
+
+      const generateBtn = document.getElementById('generateButton');
+      generateBtn.disabled = true;
+      const originalGenText = generateBtn.textContent;
+      generateBtn.textContent = "生成中・・・";
+
+      // 状況表示
+      document.getElementById('questionText').textContent = "";
+      document.getElementById('questionBox').style.display = 'block';
+      document.getElementById('result').textContent = "";
+
+      const selectedModel = document.getElementById('modelChoice').value;
+      const grade = document.getElementById('grade').value;
+      const difficulty = document.getElementById('difficulty').value;
+      const topic = document.getElementById('topic').value.trim();
+      const type = document.getElementById('type').value;
+
+      const prompt = `あなたは日本の学校教育に詳しい数学教師です。
+以下の条件に従い、1問だけ数学の問題を出題してください。ただし、答えや解説は含まず、問題文のみを作成してください。
+- 学年: ${grade}
+- 学年内の難易度: ${difficulty}
+- 分野: ${topic}
+- 問題タイプ: ${type}
+- 問題文は日本語で作成し、数式がある場合は $$...$$ でディスプレイ数式として記述すること。`;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+        const data = await res.json();
+        if (data.error || !data.choices || data.choices.length === 0) {
+          throw new Error(data.error?.message || "APIから有効なデータが返されませんでした。");
+        }
+        const questionText = data.choices[0].message.content.trim();
+        document.getElementById('questionText').innerHTML = questionText;
+        document.getElementById('result').textContent = "";
+        document.getElementById('userAnswer').value = "";
+        MathJax.startup.promise.then(() => MathJax.typesetPromise());
+      } catch (err) {
+        console.error(err);
+        document.getElementById('questionText').textContent = "";
+        document.getElementById('result').textContent = "";
+        alert('問題の生成に失敗しました… ' + err.message);
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = originalGenText;
+      }
+    }
+
+    async function checkAnswer() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!apiKey) return alert('APIキーを入力してください！');
+
+      const checkBtn = document.getElementById('checkAnswerButton');
+      checkBtn.disabled = true;
+      const originalCheckText = checkBtn.textContent;
+      checkBtn.textContent = "採点中・・・";
+
+      const selectedModel = document.getElementById('modelChoice').value;
+      const userAnswer = document.getElementById('userAnswer').value.trim().replace(/[。\\n]/g, '');
+      if (!userAnswer) {
+        checkBtn.disabled = false;
+        checkBtn.textContent = originalCheckText;
+        return alert("答えを入力してください！");
+      }
+      document.getElementById('result').innerHTML = "";
+      const prompt = `あなたは数学の問題を採点する名人です。
+以下の問題について、ユーザーの解答が正しいかどうかを判定してください。解説がなくても、答えが正しければ「正解」と判断すること。
+      
+出力フォーマットの例：
+正解
+理由：
+$$
+＜説明・計算過程（任意）＞
+$$
+
+または
+
+不正解
+理由：
+$$
+＜説明・計算過程＞
+$$
+
+---
+問題文: ${document.getElementById('questionText').textContent}
+ユーザーの解答: ${userAnswer}
+---`;
+      try {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+        const data = await res.json();
+        if (data.error || !data.choices || data.choices.length === 0) {
+          throw new Error(data.error?.message || "採点APIが応答しませんでした。");
+        }
+        let evaluation = data.choices[0].message.content.trim();
+        const lines = evaluation.split('\n').map(line => line.trim()).filter(line => line);
+        if (lines.length > 1) {
+          const verdict = lines[0];
+          let explanation = lines.slice(1).join('\n');
+          if (!explanation.includes('$$')) {
+            explanation = '$$' + explanation + '$$';
+          }
+          evaluation = `<p>${verdict}</p><div style="text-align:center;">${explanation}</div>`;
+        }
+        document.getElementById('result').innerHTML = evaluation;
+        MathJax.startup.promise.then(() => MathJax.typesetPromise());
+      } catch (err) {
+        console.error(err);
+        document.getElementById('result').textContent = "";
+        alert('採点に失敗しました… ' + err.message);
+      } finally {
+        checkBtn.disabled = false;
+        checkBtn.textContent = originalCheckText;
+      }
+    }
+  </script>
+</body>
 </html>
